@@ -1,0 +1,29 @@
+{
+  "brand_name": "Hemanth Ranam Professional Services",
+  "product_name": "HR Accounts",
+  "tagline": "Small-Business Invoicing, Quotes, Expenses & Cashflow Engine",
+  "theme": {
+    "primary_color": "#2563eb",
+    "deep_blue": "#1d4ed8",
+    "light_blue": "#60a5fa",
+    "bg_canvas": "#ffffff",
+    "bg_secondary": "#f8fafc",
+    "text_primary": "#0f172a",
+    "text_muted": "#64748b",
+    "card_border": "#e2e8f0",
+    "font_family": "Inter, Outfit, system-ui, sans-serif",
+    "border_radius": "12px"
+  },
+  "business_info": {
+    "legal_name": "Hemanth Ranam Professional Services",
+    "tax_id": "GB123456789",
+    "address": "London, United Kingdom",
+    "email": "hemanth.ranam@gmail.com",
+    "website": "https://app.hemanth-ranam.workers.dev",
+    "bank_details": "Bank: Barclays | Sort: 20-00-00 | Acc: 12345678 | IBAN: GB29BARC20000012345678",
+    "default_currency": "USD",
+    "currency_symbol": "$",
+    "default_tax_rate": 0.0,
+    "payment_terms": "Payment due within 14 days of invoice issue date."
+  }
+}
