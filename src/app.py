@@ -4,7 +4,7 @@ import csv
 import io
 import time
 import uuid
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -44,10 +44,14 @@ def on_startup():
 
 # --- Pydantic Models ---
 class ClientCreate(BaseModel):
-    name: str
+    name: Optional[str] = None
+    contact_name: Optional[str] = None
     email: str
     company: Optional[str] = ""
+    company_name: Optional[str] = None
     address: Optional[str] = ""
+    billing_address: Optional[str] = None
+    phone: Optional[str] = ""
     currency: Optional[str] = "USD"
     tax_id: Optional[str] = ""
 
@@ -59,17 +63,18 @@ class LineItem(BaseModel):
 class InvoiceCreate(BaseModel):
     client_id: int
     type: Optional[str] = "Invoice" # Invoice, Quote
-    issue_date: str # YYYY-MM-DD
-    due_date: str   # YYYY-MM-DD
+    issue_date: Optional[str] = None # YYYY-MM-DD
+    due_date: Optional[str] = None   # YYYY-MM-DD
     currency: Optional[str] = "USD"
     items: List[LineItem]
     tax_rate: Optional[float] = 0.0
     discount: Optional[float] = 0.0
+    discount_amount: Optional[float] = None
     notes: Optional[str] = ""
 
 class PaymentCreate(BaseModel):
     amount: float
-    payment_date: str
+    payment_date: Optional[str] = None
     payment_method: Optional[str] = "Bank Transfer"
     reference: Optional[str] = ""
 
@@ -78,7 +83,7 @@ class ExpenseCreate(BaseModel):
     vendor: str
     amount: float
     currency: Optional[str] = "USD"
-    expense_date: str
+    expense_date: Optional[str] = None
     notes: Optional[str] = ""
 
 # --- API Endpoints ---
@@ -109,11 +114,12 @@ def get_financial_stats():
         count_quotes = cursor.execute("SELECT COUNT(*) FROM invoices WHERE type = 'Quote'").fetchone()[0]
 
     return {
-        "total_invoiced": total_invoiced,
-        "total_paid": total_paid,
-        "total_receivables": max(0.0, total_receivables),
-        "total_expenses": total_expenses,
-        "net_profit": net_profit,
+        "total_invoiced": round(total_invoiced, 2),
+        "total_paid": round(total_paid, 2),
+        "total_collected": round(total_paid, 2),
+        "total_receivables": round(max(0.0, total_receivables), 2),
+        "total_expenses": round(total_expenses, 2),
+        "net_profit": round(net_profit, 2),
         "count_invoices": count_invoices,
         "count_quotes": count_quotes
     }
@@ -127,14 +133,27 @@ def list_clients():
 
 @app.post("/api/clients", status_code=201)
 def create_client(client: ClientCreate):
+    name = client.name or client.contact_name or (client.company_name or "Valued Client")
+    company = client.company_name or client.company or ""
+    address = client.billing_address or client.address or ""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
         INSERT INTO clients (name, email, company, address, currency, tax_id)
         VALUES (?, ?, ?, ?, ?, ?)
-        """, (client.name, client.email, client.company, client.address, client.currency, client.tax_id))
+        """, (name, client.email, company, address, client.currency, client.tax_id))
         conn.commit()
-        return {"id": cursor.lastrowid, **client.model_dump()}
+        return {
+            "id": cursor.lastrowid,
+            "name": name,
+            "company": company,
+            "company_name": company,
+            "email": client.email,
+            "address": address,
+            "billing_address": address,
+            "currency": client.currency,
+            "tax_id": client.tax_id
+        }
 
 # Invoices & Quotes CRUD
 @app.get("/api/invoices")
@@ -162,13 +181,17 @@ def create_invoice(req: InvoiceCreate):
     if not req.items:
         raise HTTPException(status_code=400, detail="Invoice must contain at least one line item")
 
+    issue_date = req.issue_date or date.today().strftime("%Y-%m-%d")
+    due_date = req.due_date or (date.today() + timedelta(days=30)).strftime("%Y-%m-%d")
+    discount = req.discount_amount if req.discount_amount is not None else (req.discount or 0.0)
+
     with get_db() as conn:
         cursor = conn.cursor()
         
         # Calculate totals
         subtotal = sum(item.quantity * item.unit_price for item in req.items)
-        tax_amount = subtotal * (req.tax_rate / 100.0)
-        total = subtotal + tax_amount - req.discount
+        tax_amount = round(subtotal * (req.tax_rate / 100.0), 2)
+        total = round(subtotal + tax_amount - discount, 2)
         
         prefix = "INV" if req.type == "Invoice" else "QUO"
         invoice_number = f"{prefix}-{int(time.time())}-{uuid.uuid4().hex[:4].upper()}"
@@ -176,40 +199,59 @@ def create_invoice(req: InvoiceCreate):
         cursor.execute("""
         INSERT INTO invoices (invoice_number, client_id, type, issue_date, due_date, currency, subtotal, tax_rate, tax_amount, discount, total, amount_paid, status, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0.0, 'Sent', ?)
-        """, (invoice_number, req.client_id, req.type, req.issue_date, req.due_date, req.currency, subtotal, req.tax_rate, tax_amount, req.discount, total, req.notes))
+        """, (invoice_number, req.client_id, req.type, issue_date, due_date, req.currency, subtotal, req.tax_rate, tax_amount, discount, total, req.notes))
         invoice_id = cursor.lastrowid
 
         for item in req.items:
-            item_total = item.quantity * item.unit_price
+            item_total = round(item.quantity * item.unit_price, 2)
             cursor.execute("""
             INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, total)
             VALUES (?, ?, ?, ?, ?)
             """, (invoice_id, item.description, item.quantity, item.unit_price, item_total))
 
         conn.commit()
-        return {"id": invoice_id, "invoice_number": invoice_number, "total": total, "status": "Sent"}
+        return {
+            "id": invoice_id,
+            "invoice_number": invoice_number,
+            "subtotal": subtotal,
+            "tax_amount": tax_amount,
+            "discount": discount,
+            "total": total,
+            "amount_paid": 0.0,
+            "balance_due": total,
+            "status": "Sent"
+        }
 
 # Record Payment
 @app.post("/api/invoices/{invoice_id}/payments", status_code=201)
 def record_payment(invoice_id: int, p: PaymentCreate):
+    payment_date = p.payment_date or date.today().strftime("%Y-%m-%d")
     with get_db() as conn:
         cursor = conn.cursor()
         inv = cursor.execute("SELECT total, amount_paid FROM invoices WHERE id = ?", (invoice_id,)).fetchone()
         if not inv:
             raise HTTPException(status_code=404, detail="Invoice not found")
         
-        new_paid = inv[1] + p.amount
+        new_paid = round(inv[1] + p.amount, 2)
+        balance_due = round(max(0.0, inv[0] - new_paid), 2)
         new_status = "Paid" if new_paid >= inv[0] else "Partially Paid"
 
         cursor.execute("""
         INSERT INTO payments (invoice_id, amount, payment_date, payment_method, reference)
         VALUES (?, ?, ?, ?, ?)
-        """, (invoice_id, p.amount, p.payment_date, p.payment_method, p.reference))
+        """, (invoice_id, p.amount, payment_date, p.payment_method, p.reference))
 
         cursor.execute("UPDATE invoices SET amount_paid = ?, status = ? WHERE id = ?", (new_paid, new_status, invoice_id))
         conn.commit()
 
-        return {"status": "success", "invoice_id": invoice_id, "new_paid_total": new_paid, "invoice_status": new_status}
+        return {
+            "status": "success",
+            "invoice_id": invoice_id,
+            "amount_paid": p.amount,
+            "new_paid_total": new_paid,
+            "balance_due": balance_due,
+            "invoice_status": new_status
+        }
 
 # Expenses CRUD
 @app.get("/api/expenses")
@@ -220,17 +262,19 @@ def list_expenses():
 
 @app.post("/api/expenses", status_code=201)
 def create_expense(exp: ExpenseCreate):
+    exp_date = exp.expense_date or date.today().strftime("%Y-%m-%d")
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
         INSERT INTO expenses (category, vendor, amount, currency, expense_date, notes)
         VALUES (?, ?, ?, ?, ?, ?)
-        """, (exp.category, exp.vendor, exp.amount, exp.currency, exp.expense_date, exp.notes))
+        """, (exp.category, exp.vendor, exp.amount, exp.currency, exp_date, exp.notes))
         conn.commit()
         return {"id": cursor.lastrowid, **exp.model_dump()}
 
 # Printable Invoice Render
 @app.get("/api/invoices/{invoice_id}/render", response_class=HTMLResponse)
+@app.get("/api/invoices/{invoice_id}/pdf", response_class=HTMLResponse)
 def render_invoice_html(invoice_id: int):
     branding = load_branding()
     biz = branding.get("business_info", {})
