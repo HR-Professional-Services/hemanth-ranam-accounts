@@ -34,16 +34,16 @@ def run_accounts_qa():
 
     # 2. Client Debtor Profile Creation
     c_res = client.post("/api/clients", json={
-        "name": "Julian North",
-        "email": "j.north@northstar-consulting.com",
-        "company": "Northstar Management Consulting",
-        "address": "10 Deansgate, Manchester, UK",
+        "name": "David Miller",
+        "email": "david.miller@brightlineplumbing.co.uk",
+        "company": "Brightline Plumbing Ltd",
+        "address": "45 Industrial Way, Birmingham, UK",
         "currency": "GBP",
-        "tax_id": "GB 948 2011 88"
+        "tax_id": "GB 849 1102 99"
     })
     assert c_res.status_code == 201
     client_id = c_res.json()["id"]
-    print(f"✅ [2/7] Client debtor profile created (ID: {client_id}, Northstar Consulting).")
+    print(f"✅ [2/7] Client debtor profile created (ID: {client_id}, Brightline Plumbing Ltd).")
 
     # 3. Multi-Line Item Invoice Generation
     inv_res = client.post("/api/invoices", json={
