@@ -117,15 +117,15 @@ def init_db(db_path: Optional[str] = None):
         cursor.execute("""
         INSERT INTO users (email, password_hash, full_name, role)
         VALUES (?, ?, ?, ?);
-        """, ("finance@demo.local", hash_password("demo123"), "Hemanth Ranam", "Admin"))
+        """, ("accounts.admin@demo.local", hash_password("demo123"), "Finance Admin", "Admin"))
 
     # Seed Realistic Clients if empty
     cursor.execute("SELECT COUNT(*) FROM clients;")
     if cursor.fetchone()[0] == 0:
         clients = [
-            ("Florian Steiner", "florian.s@vanguardwealth.ch", "Vanguard Wealth Management SA", "Bahnhofstrasse 45, 8001 Zurich, Switzerland", "GBP", "CHE-112.483.921 TVA", 14, 17500.0, 10000.0),
-            ("Gareth Hopkins", "gareth@cardifffitness.wales", "Cardiff Fitness & Wellness Ltd", "88 Queen St, Cardiff, CF10 2GR, UK", "GBP", "GB 392 4819 02", 30, 6500.0, 6500.0),
-            ("Dr. Emily Vance", "emily.vance@greenleafdental.co.uk", "Green Leaf Dental Care Ltd", "14 Harley St, London, W1G 9PQ, UK", "GBP", "GB 201 9844 11", 14, 4800.0, 0.0)
+            ("Julian North", "j.north@northstar-consulting.com", "Northstar Management Consulting", "10 Deansgate, Manchester, UK", "GBP", "GB 948 2011 88", 14, 17500.0, 10000.0),
+            ("Gareth Hopkins", "gareth@riversidefitness.wales", "Riverside Fitness & Wellness Ltd", "88 Queen St, Cardiff, CF10 2GR, UK", "GBP", "GB 392 4819 02", 30, 6500.0, 6500.0),
+            ("Dr. Emily Vance", "emily.vance@greenfielddental.co.uk", "Greenfield Dental Care Ltd", "14 Harley St, London, W1G 9PQ, UK", "GBP", "GB 201 9844 11", 14, 4800.0, 0.0)
         ]
         cursor.executemany("""
         INSERT INTO clients (name, email, company, address, currency, tax_id, payment_terms_days, total_invoiced, total_paid)
