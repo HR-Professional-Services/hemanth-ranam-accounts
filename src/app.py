@@ -416,74 +416,81 @@ def index_page():
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-app: #090d16;
-      --bg-surface: #101726;
-      --bg-surface-elevated: #162035;
-      --bg-surface-hover: #1c2a45;
-      --accent-primary: #3b82f6;
-      --accent-primary-hover: #2563eb;
-      --accent-success: #10b981;
-      --accent-warning: #f59e0b;
-      --accent-danger: #ef4444;
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --border-subtle: #1e293b;
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --font-sans: 'Inter', sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
+      --hr-primary: #2563eb;
+      --hr-primary-hover: #1d4ed8;
+      --hr-primary-light: #eff6ff;
+      --hr-success: #10b981;
+      --hr-warning: #f59e0b;
+      --hr-danger: #ef4444;
+      --hr-bg: #f8fafc;
+      --hr-surface: #ffffff;
+      --hr-surface-elevated: #f1f5f9;
+      --hr-surface-hover: #f8fafc;
+      --hr-text: #0f172a;
+      --hr-text-secondary: #475569;
+      --hr-muted: #64748b;
+      --hr-border: #e2e8f0;
+      --hr-border-subtle: #f1f5f9;
+      --hr-radius-sm: 6px;
+      --hr-radius-md: 10px;
+      --hr-font-sans: 'Inter', sans-serif;
+      --hr-font-mono: 'JetBrains Mono', monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background-color: var(--bg-app); color: var(--text-primary); font-family: var(--font-sans); display: flex; height: 100vh; overflow: hidden; }
+    body { background-color: var(--hr-bg); color: var(--hr-text); font-family: var(--hr-font-sans); display: flex; height: 100vh; overflow: hidden; }
     
-    .sidebar { width: 250px; background: var(--bg-surface); border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; flex-shrink: 0; }
-    .brand-header { padding: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-subtle); }
+    .sidebar { width: 250px; background: var(--hr-surface); border-right: 1px solid var(--hr-border); display: flex; flex-direction: column; flex-shrink: 0; }
+    .brand-header { padding: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--hr-border); }
     .brand-badge { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 800; font-size: 16px; padding: 6px 10px; border-radius: 8px; }
-    .brand-title { font-weight: 700; font-size: 16px; }
+    .brand-title { font-weight: 700; font-size: 16px; color: var(--hr-text); }
 
     .nav-menu { list-style: none; padding: 16px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
-    .nav-item a { display: flex; align-items: center; gap: 12px; padding: 10px 14px; color: var(--text-secondary); text-decoration: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; }
-    .nav-item a:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
-    .nav-item.active a { background: rgba(59, 130, 246, 0.15); color: var(--accent-primary); font-weight: 600; border-left: 3px solid var(--accent-primary); }
+    .nav-item a { display: flex; align-items: center; gap: 12px; padding: 10px 14px; color: var(--hr-text-secondary); text-decoration: none; border-radius: var(--hr-radius-sm); font-size: 13px; font-weight: 500; }
+    .nav-item a:hover { background: var(--hr-surface-hover); color: var(--hr-text); }
+    .nav-item.active a { background: var(--hr-primary-light); color: var(--hr-primary); font-weight: 600; border-left: 3px solid var(--hr-primary); }
 
     .main-wrapper { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    .top-bar { height: 64px; background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; }
+    .top-bar { height: 64px; background: var(--hr-surface); border-bottom: 1px solid var(--hr-border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; }
     .content-body { flex: 1; overflow-y: auto; padding: 28px; }
     .view-section { display: none; }
     .view-section.active { display: block; }
 
-    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
-    .btn-primary { background: var(--accent-primary); color: #fff; }
-    .btn-secondary { background: var(--bg-surface-elevated); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--hr-radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-primary { background: var(--hr-primary); color: #fff; }
+    .btn-primary:hover { background: var(--hr-primary-hover); }
+    .btn-secondary { background: var(--hr-surface); color: var(--hr-text); border: 1px solid var(--hr-border); }
+    .btn-secondary:hover { background: var(--hr-surface-hover); }
 
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .kpi-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 20px; }
-    .kpi-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; }
-    .kpi-val { font-size: 24px; font-weight: 800; font-family: var(--font-mono); }
+    .kpi-card { background: var(--hr-surface); border: 1px solid var(--hr-border); border-radius: var(--hr-radius-md); padding: 20px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03); }
+    .kpi-label { font-size: 12px; color: var(--hr-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
+    .kpi-val { font-size: 24px; font-weight: 800; font-family: var(--hr-font-mono); color: var(--hr-text); }
 
-    .data-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 24px; }
-    .card-header { padding: 18px 22px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; }
+    .data-card { background: var(--hr-surface); border: 1px solid var(--hr-border); border-radius: var(--hr-radius-md); overflow: hidden; margin-bottom: 24px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03); }
+    .card-header { padding: 18px 22px; border-bottom: 1px solid var(--hr-border); display: flex; justify-content: space-between; align-items: center; }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--hr-text); }
 
     table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-    th { padding: 12px 18px; background: rgba(0,0,0,0.25); color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border-subtle); font-size: 11px; text-transform: uppercase; }
-    td { padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); }
-    tr:hover td { background: var(--bg-surface-hover); }
+    th { padding: 12px 18px; background: #f8fafc; color: var(--hr-muted); font-weight: 600; border-bottom: 1px solid var(--hr-border); font-size: 11px; text-transform: uppercase; }
+    td { padding: 14px 18px; border-bottom: 1px solid var(--hr-border); color: var(--hr-text); }
+    tr:hover td { background: #f8fafc; }
 
     .badge { display: inline-flex; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
-    .badge-paid { background: rgba(16,185,129,0.15); color: #10b981; }
-    .badge-partial { background: rgba(245,158,11,0.15); color: #f59e0b; }
-    .badge-sent { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .badge-paid { background: #ecfdf5; color: #10b981; }
+    .badge-partial { background: #fffbeb; color: #f59e0b; }
+    .badge-sent { background: #eff6ff; color: #3b82f6; }
+    .badge-draft { background: #f1f5f9; color: #64748b; }
   </style>
 </head>
 <body>
 
+  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="brand-header">
       <div class="brand-badge">HR</div>
       <div>
         <div class="brand-title">HR Accounts</div>
-        <div style="font-size:11px; color:var(--text-muted);">Invoicing & Ledger</div>
+        <div style="font-size:11px; color:var(--hr-muted);">Invoicing & Financial Ledger</div>
       </div>
     </div>
     <ul class="nav-menu">
