@@ -1,7 +1,8 @@
 {
-  "brand_name": "Hemanth Ranam Professional Services",
+  "brand_name": "HR Professional Services",
   "product_name": "HR Accounts",
-  "tagline": "Small-Business Invoicing, Quotes, Expenses & Cashflow Engine",
+  "tagline": "Enterprise Invoicing, Billing, Expenses & Financial Ledger",
+  "logo_text": "HR Accounts",
   "theme": {
     "primary_color": "#2563eb",
     "deep_blue": "#1d4ed8",
@@ -11,19 +12,19 @@
     "text_primary": "#0f172a",
     "text_muted": "#64748b",
     "card_border": "#e2e8f0",
-    "font_family": "Inter, Outfit, system-ui, sans-serif",
-    "border_radius": "12px"
+    "font_family": "Inter, system-ui, sans-serif",
+    "border_radius": "10px"
   },
   "business_info": {
-    "legal_name": "Hemanth Ranam Professional Services",
-    "tax_id": "GB123456789",
-    "address": "London, United Kingdom",
-    "email": "hemanth.ranam@gmail.com",
-    "website": "https://app.hemanth-ranam.workers.dev",
-    "bank_details": "Bank: Barclays | Sort: 20-00-00 | Acc: 12345678 | IBAN: GB29BARC20000012345678",
-    "default_currency": "USD",
-    "currency_symbol": "$",
-    "default_tax_rate": 0.0,
+    "legal_name": "HR Professional Services Ltd",
+    "tax_id": "GB 948 2011 88",
+    "address": "100 Bishopsgate, London, EC2N 4AG, United Kingdom",
+    "email": "accounts@hr-services.local",
+    "website": "https://hr-services.local",
+    "bank_details": "Bank: Barclays Corporate Banking UK | Sort: 20-00-00 | Acc: 88291044",
+    "default_currency": "GBP",
+    "currency_symbol": "£",
+    "default_tax_rate": 0.20,
     "payment_terms": "Payment due within 14 days of invoice issue date."
   }
 }
