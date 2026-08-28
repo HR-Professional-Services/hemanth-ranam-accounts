@@ -1,21 +1,35 @@
-# DEPLOYMENT GUIDE — HR ACCOUNTS
+# HR Accounts — V1 Deployment & Operational Guide
 
-**System**: HR Accounts (Product 04)  
-**Provider**: Hemanth Ranam Professional Services  
-**Source Hub**: [https://app.hemanth-ranam.workers.dev/](https://app.hemanth-ranam.workers.dev/)
+## System Requirements
+- **Runtime**: Python 3.10+
+- **Port**: `8004`
 
----
+## Environment Variables
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `PORT` | `8004` | Uvicorn port |
+| `ACCOUNTS_DB_PATH` | `accounts.db` | SQLite database path |
 
-## 1. Hosting Classifications
-* **Tier A (Recommended)**: Cloudflare Pages + Serverless SQLite WAL ($0.00/mo).
-* **Tier B**: Micro Container / Docker on Fly.io / Render ($0.00 - $5.00/mo).
-* **Tier C**: Dedicated Ubuntu VPS with PostgreSQL 16 ($10.00/mo).
-
----
-
-## 2. Docker Deployment
+## Startup Commands
 ```bash
-git clone https://github.com/HR-Professional-Services/hemanth-ranam-accounts.git
-cd hemanth-ranam-accounts
-docker compose up -d --build
+# Development
+python3 -m uvicorn src.app:app --host 0.0.0.0 --port 8004 --reload
+
+# Production
+python3 -m uvicorn src.app:app --host 0.0.0.0 --port 8004 --workers 2
 ```
+
+## Health Check
+```bash
+curl http://127.0.0.1:8004/api/health
+```
+
+## Backup
+```bash
+sqlite3 accounts.db ".backup 'accounts_snapshot_$(date +%Y%m%d).db'"
+curl -s http://127.0.0.1:8004/api/export/json > accounts_backup.json
+```
+
+## Notes
+- The `accounts.db` file contains live invoice, payment, and client data. Back up before any schema changes.
+- Printable PDF invoices are generated server-side as HTML; no external PDF library required in V1.
