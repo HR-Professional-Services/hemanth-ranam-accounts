@@ -220,6 +220,22 @@ def record_payment(payload: PaymentCreate):
         conn.commit()
         return {"status": new_status, "amount_paid": new_paid, "balance_due": new_balance}
 
+@app.patch("/api/invoices/{invoice_id}/cancel")
+def cancel_invoice(invoice_id: int):
+    with get_db() as conn:
+        conn.execute("UPDATE invoices SET status = 'Cancelled', balance_due = 0.0 WHERE id = ?", (invoice_id,))
+        conn.commit()
+        return {"status": "Cancelled", "id": invoice_id}
+
+@app.delete("/api/invoices/{invoice_id}")
+def delete_invoice(invoice_id: int):
+    with get_db() as conn:
+        conn.execute("DELETE FROM invoice_items WHERE invoice_id = ?", (invoice_id,))
+        conn.execute("DELETE FROM payments WHERE invoice_id = ?", (invoice_id,))
+        conn.execute("DELETE FROM invoices WHERE id = ?", (invoice_id,))
+        conn.commit()
+        return {"status": "deleted", "id": invoice_id}
+
 @app.get("/api/clients")
 def list_clients():
     with get_db() as conn:
@@ -714,8 +730,229 @@ def index_page():
       `).join('');
     }
 
+  <!-- Create Invoice Modal -->
+  <div class="modal-overlay" id="modal-invoice" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
+    <div class="modal-box" style="background:#fff; border:1px solid var(--hr-border); border-radius:10px; width:100%; max-width:640px; max-height:90vh; overflow-y:auto; padding:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <h3 style="font-size:16px; font-weight:700; color:var(--hr-text);">Issue New Client Invoice</h3>
+        <button style="background:none; border:none; color:var(--hr-muted); cursor:pointer; font-size:18px;" onclick="closeModals()">✕</button>
+      </div>
+      <form id="form-invoice" onsubmit="submitInvoice(event)">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--hr-muted); margin-bottom:4px;">Select Client</label>
+            <select id="inv-client" class="search-box" style="width:100%;" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--hr-muted); margin-bottom:4px;">Invoice Type</label>
+            <select id="inv-type" class="search-box" style="width:100%;">
+              <option value="Invoice">Tax Invoice (Standard)</option>
+              <option value="Quote">Formal Quotation</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--hr-muted); margin-bottom:4px;">Issue Date</label>
+            <input type="date" id="inv-issue-date" class="search-box" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--hr-muted); margin-bottom:4px;">Due Date</label>
+            <input type="date" id="inv-due-date" class="search-box" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--hr-muted); margin-bottom:4px;">VAT Rate</label>
+            <select id="inv-tax-rate" class="search-box" style="width:100%;">
+              <option value="0.20">Standard UK VAT (20%)</option>
+              <option value="0.00">Zero Rated (0%)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--hr-border); padding-top:12px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="font-size:13px;">Line Items</strong>
+            <button type="button" class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="addInvoiceLine()">+ Add Item</button>
+          </div>
+          <div id="invoice-lines-container">
+            <div class="inv-line-row" style="display:grid; grid-template-columns:3fr 1fr 1.5fr; gap:8px; margin-bottom:8px;">
+              <input type="text" class="search-box line-desc" style="width:100%;" placeholder="Description of service/deliverable" required value="Professional Services Consultation">
+              <input type="number" class="search-box line-qty" style="width:100%;" placeholder="Qty" value="1" min="1" required>
+              <input type="number" step="0.01" class="search-box line-price" style="width:100%;" placeholder="Price (£)" value="450.00" required>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--hr-muted); margin-bottom:4px;">Payment Instructions / Notes</label>
+          <textarea id="inv-notes" class="search-box" style="width:100%; height:60px; resize:none;" placeholder="Bank transfer terms, payment details..."></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+          <button type="submit" id="btn-submit-inv" class="btn btn-primary">Generate Invoice</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Record Payment Modal -->
+  <div class="modal-overlay" id="modal-payment" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
+    <div class="modal-box" style="background:#fff; border:1px solid var(--hr-border); border-radius:10px; width:100%; max-width:460px; padding:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <h3 style="font-size:16px; font-weight:700; color:var(--hr-text);">Record Client Payment</h3>
+        <button style="background:none; border:none; color:var(--hr-muted); cursor:pointer; font-size:18px;" onclick="closeModals()">✕</button>
+      </div>
+      <form id="form-payment" onsubmit="submitPayment(event)">
+        <input type="hidden" id="pay-inv-id">
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--hr-muted); margin-bottom:4px;">Invoice Number</label>
+          <input type="text" id="pay-inv-num" class="search-box" style="width:100%; background:#f8fafc;" readonly>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--hr-muted); margin-bottom:4px;">Amount Received (£)</label>
+          <input type="number" step="0.01" id="pay-amount" class="search-box" style="width:100%; font-size:16px; font-weight:700;" required>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--hr-muted); margin-bottom:4px;">Payment Method</label>
+          <select id="pay-method" class="search-box" style="width:100%;">
+            <option value="Bank Transfer">Bank Transfer (BACS/Faster Payments)</option>
+            <option value="Credit/Debit Card">Credit/Debit Card</option>
+            <option value="Direct Debit">Direct Debit</option>
+            <option value="Cash">Cash / Cheque</option>
+          </select>
+        </div>
+        <div style="margin-bottom:18px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--hr-muted); margin-bottom:4px;">Transaction Reference</label>
+          <input type="text" id="pay-ref" class="search-box" style="width:100%;" placeholder="e.g. TXN-998822 / Bank Ref">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="hr-toast" style="position:fixed; bottom:24px; right:24px; background:#0f172a; color:#fff; padding:12px 20px; border-radius:8px; font-size:13px; font-weight:600; display:none; z-index:9999; box-shadow:0 10px 15px -3px rgba(0,0,0,0.2);">
+    Action Complete
+  </div>
+
+  <script>
+    let clientsCache = [];
+
+    function showToast(msg, isSuccess = true) {
+      const t = document.getElementById('hr-toast');
+      t.innerText = msg;
+      t.style.background = isSuccess ? '#0f172a' : '#ef4444';
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
     function openInvoiceModal() {
-      alert('To issue a new invoice via API or customized workflow, submit to POST /api/invoices.');
+      document.getElementById('form-invoice').reset();
+      const sel = document.getElementById('inv-client');
+      sel.innerHTML = clientsCache.map(c => `<option value="${c.id}">${c.company || c.name} (${c.email})</option>`).join('');
+      document.getElementById('modal-invoice').style.display = 'flex';
+    }
+
+    function closeModals() {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+    }
+
+    function addInvoiceLine() {
+      const div = document.createElement('div');
+      div.className = 'inv-line-row';
+      div.style.cssText = 'display:grid; grid-template-columns:3fr 1fr 1.5fr; gap:8px; margin-bottom:8px;';
+      div.innerHTML = `
+        <input type="text" class="search-box line-desc" style="width:100%;" placeholder="Description of service/deliverable" required>
+        <input type="number" class="search-box line-qty" style="width:100%;" placeholder="Qty" value="1" min="1" required>
+        <input type="number" step="0.01" class="search-box line-price" style="width:100%;" placeholder="Price (£)" value="100.00" required>
+      `;
+      document.getElementById('invoice-lines-container').appendChild(div);
+    }
+
+    async function submitInvoice(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-inv');
+      btn.innerText = 'Generating...';
+      btn.disabled = true;
+
+      const lineRows = document.querySelectorAll('.inv-line-row');
+      const items = Array.from(lineRows).map(row => ({
+        description: row.querySelector('.line-desc').value,
+        quantity: parseFloat(row.querySelector('.line-qty').value),
+        unit_price: parseFloat(row.querySelector('.line-price').value)
+      }));
+
+      const payload = {
+        client_id: parseInt(document.getElementById('inv-client').value),
+        type: document.getElementById('inv-type').value,
+        issue_date: document.getElementById('inv-issue-date').value || null,
+        due_date: document.getElementById('inv-due-date').value || null,
+        tax_rate: parseFloat(document.getElementById('inv-tax-rate').value),
+        items: items,
+        notes: document.getElementById('inv-notes').value
+      };
+
+      try {
+        const res = await fetch('/api/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.status === 201) {
+          showToast('✓ Invoice issued successfully!');
+          closeModals();
+          loadAccountsData();
+        } else {
+          showToast('Failed to issue invoice', false);
+        }
+      } catch (err) {
+        showToast('Error connecting to server', false);
+      } finally {
+        btn.innerText = 'Generate Invoice';
+        btn.disabled = false;
+      }
+    }
+
+    function openPaymentModal(invId, invNum, balance) {
+      document.getElementById('pay-inv-id').value = invId;
+      document.getElementById('pay-inv-num').value = invNum;
+      document.getElementById('pay-amount').value = balance.toFixed(2);
+      document.getElementById('modal-payment').style.display = 'flex';
+    }
+
+    async function submitPayment(e) {
+      e.preventDefault();
+      const invId = parseInt(document.getElementById('pay-inv-id').value);
+      const payload = {
+        invoice_id: invId,
+        amount: parseFloat(document.getElementById('pay-amount').value),
+        payment_method: document.getElementById('pay-method').value,
+        reference: document.getElementById('pay-ref').value
+      };
+
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.status === 201) {
+        showToast('✓ Payment recorded successfully!');
+        closeModals();
+        loadAccountsData();
+      }
+    }
+
+    async function cancelInvoice(id) {
+      if (confirm('Cancel this invoice?')) {
+        await fetch(`/api/invoices/${id}/cancel`, { method: 'PATCH' });
+        showToast('✓ Invoice cancelled');
+        loadAccountsData();
+      }
     }
 
     window.addEventListener('DOMContentLoaded', () => {
