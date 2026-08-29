@@ -28,7 +28,7 @@ def load_branding():
         with open(BRANDING_FILE, "r") as f:
             return json.load(f)
     return {
-        "brand_name": "HR Professional Services",
+        "brand_name": "HR Services",
         "product_name": "HR Accounts",
         "primary_color": "#2563eb",
         "bg_canvas": "#ffffff",
@@ -372,13 +372,12 @@ def render_invoice_document(invoice_id: int):
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Invoice {inv['invoice_number']} — HR Professional Services</title>
+  <title>Invoice {inv['invoice_number']} — HR Services</title>
   <style>
     body {{ font-family: 'Helvetica Neue', Arial, sans-serif; color: #0f172a; background: #fff; padding: 40px; margin: 0; }}
     .invoice-card {{ max-width: 800px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
     .header {{ display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2563eb; padding-bottom: 20px; }}
     .brand-title {{ font-size: 22px; font-weight: 800; color: #0f172a; }}
-    .inv-title {{ font-size: 26px; font-weight: 800; color: #2563eb; text-align: right; }}
     .badge-paid {{ color: #16a34a; border: 2px solid #16a34a; padding: 4px 12px; border-radius: 4px; font-weight: 800; font-size: 14px; text-transform: uppercase; }}
   </style>
 </head>
@@ -386,7 +385,7 @@ def render_invoice_document(invoice_id: int):
   <div class="invoice-card">
     <div class="header">
       <div>
-        <div class="brand-title">HR PROFESSIONAL SERVICES</div>
+        <div class="brand-title">HR SERVICES</div>
         <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Enterprise Architecture & Business Management Systems</div>
         <div style="font-size: 12px; color: #64748b;">100 Bishopsgate, London, EC2N 4AG &bull; accounts@hr-services.local</div>
       </div>
@@ -433,7 +432,7 @@ def render_invoice_document(invoice_id: int):
       <div style="font-size: 12px; color: #64748b; max-width: 400px;">
         <div style="font-weight: bold; margin-bottom: 4px;">Remittance & Bank Details:</div>
         <div>Bank: Barclays Corporate Banking UK</div>
-        <div>Account: HR Professional Services Ltd</div>
+        <div>Account: HR Services Ltd</div>
         <div>Sort Code: 20-00-00 | Account No: 88291044</div>
       </div>
 
@@ -461,6 +460,9 @@ def render_invoice_document(invoice_id: int):
       </div>
     </div>
   </div>
+
+
+
 </body>
 </html>
 """

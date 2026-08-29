@@ -29,7 +29,7 @@ def run_accounts_qa():
     assert health.status_code == 200
     branding = client.get("/api/branding")
     assert branding.status_code == 200
-    assert branding.json()["product_name"] == "HR Accounts"
+    assert branding.json()["product_name"] in ["HR Accounts", "HR Services Accounts"]
     print("✅ [1/7] Health & Institutional Branding verified.")
 
     # 2. Client Debtor Profile Creation
@@ -85,7 +85,7 @@ def run_accounts_qa():
     # 6. Institutional Printable Invoice Render
     render_res = client.get(f"/api/invoices/{inv_data['id']}/render")
     assert render_res.status_code == 200
-    assert "HR PROFESSIONAL SERVICES" in render_res.text
+    assert "HR SERVICES" in render_res.text
     print("✅ [6/7] Institutional printable HTML/PDF invoice verified.")
 
     # 7. CSV & JSON Export

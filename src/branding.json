@@ -1,8 +1,8 @@
 {
-  "brand_name": "HR Professional Services",
-  "product_name": "HR Accounts",
+  "brand_name": "HR Services",
+  "product_name": "HR Services Accounts",
   "tagline": "Enterprise Invoicing, Billing, Expenses & Financial Ledger",
-  "logo_text": "HR Accounts",
+  "logo_text": "HR Services Accounts",
   "theme": {
     "primary_color": "#2563eb",
     "deep_blue": "#1d4ed8",
@@ -16,7 +16,7 @@
     "border_radius": "10px"
   },
   "business_info": {
-    "legal_name": "HR Professional Services Ltd",
+    "legal_name": "HR Services Ltd",
     "tax_id": "GB 948 2011 88",
     "address": "100 Bishopsgate, London, EC2N 4AG, United Kingdom",
     "email": "accounts@hr-services.local",
